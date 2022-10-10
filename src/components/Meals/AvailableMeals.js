@@ -1,38 +1,72 @@
 import Card from '../UI/Card';
 import MealItem from './MealItem/MealItem';
 import classes from './AvailableMeals.module.css'
+import { useEffect, useState } from 'react';
 
-const DUMMY_MEALS = [
-    {
-      id: 'm1',
-      name: 'Pizza',
-      description: 'including tomatoes and cheese and often other toppings and baked.',
-      price: 22.99,
-    },
-    {
-      id: 'm2',
-      name: 'Burger',
-      description: 'Meat and cheese and some vegetables',
-      price: 16.5,
-    },
-    {
-      id: 'm3',
-      name: 'Sandwich',
-      description: 'Is better then a burger',
-      price: 12.99,
-    },
-    {
-      id: 'm4',
-      name: 'Pasta',
-      description: "Best food ever",
-      price: 18.99,
-    },
-  ];
+
 
 
 const AvailableMeals = (props) =>
 {
-    const mealList = DUMMY_MEALS.map(meal => (
+  const [meals,setMeals] = useState([])
+  const [isLoading, setIsLoading] = useState(true); 
+  const [httpError, setHttpError] = useState(null);
+
+
+  useEffect(()=>
+  {
+    const fetchMeals = async () =>
+    {
+     const response =  await fetch("https://pizzashop-ebda8-default-rtdb.europe-west1.firebasedatabase.app/meals.json");
+
+    if(!response.ok)
+    {
+      throw new Error('Something went wrong');
+    }
+
+     const responseData = await response.json();
+
+     const loadedMeals = [];
+
+     for(const key in responseData)
+     {
+      loadedMeals.push({
+        id:key,
+        name: responseData[key].name,
+        description: responseData[key].description,
+        price: responseData[key].price,
+      })
+     }
+     setMeals(loadedMeals);
+     setIsLoading(false);
+    };
+
+   
+      fetchMeals().catch(error =>
+        {
+          setIsLoading(false);
+          setHttpError(error.message);
+        });
+
+     
+
+    
+  },[]);
+  if(isLoading)
+  {
+    return <section className={classes.mealsLoading}>
+      <p>Loading...</p>
+    </section>
+  }
+
+  if(httpError)
+  {
+    return <section className={classes.mealsError}>
+      <p>{httpError}</p>
+    </section>
+  }
+
+    const mealList = meals.map(meal => (
     <MealItem 
         key={meal.id} 
         id={meal.id}
@@ -42,14 +76,15 @@ const AvailableMeals = (props) =>
     />
 ));
 
-    return (<section className={classes.meals}>
+    return (
+    <section className={classes.meals}>
         <Card>
         <ul>
            {mealList}
         </ul>
         </Card>
-        
-    </section>)
+    </section>
+    )
 }
 
 export default AvailableMeals;
